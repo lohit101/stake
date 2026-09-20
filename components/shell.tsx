@@ -32,12 +32,27 @@ import {
   MagnifyingGlass,
   ShieldCheck,
 } from "@phosphor-icons/react";
-import { initialState, type GameState, money } from "@/lib/game";
+import { initialState, type GameState } from "@/lib/game";
+import {
+  currencies,
+  formatMoney,
+  isCurrency,
+  switchCurrency,
+  type Currency,
+} from "@/lib/currency";
 const Store = createContext<{
   state: GameState;
   setState: Dispatch<SetStateAction<GameState>>;
   ready: boolean;
-}>({ state: initialState, setState: () => {}, ready: false });
+  currency: Currency;
+  format: (cents: number) => string;
+}>({
+  state: initialState,
+  setState: () => {},
+  ready: false,
+  currency: "USD",
+  format: formatMoney,
+});
 export const useGame = () => useContext(Store);
 export function Logo() {
   return (
@@ -52,6 +67,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [menu, setMenu] = useState(false);
   const [modal, setModal] = useState("");
   const path = usePathname();
+  const currency = state.currency ?? "USD";
+  const format = (cents: number) => formatMoney(cents, currency);
   useEffect(() => {
     try {
       const s = JSON.parse(localStorage.getItem("stake-demo-v1") || "null");
@@ -61,7 +78,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
         s.balance >= 0 &&
         Array.isArray(s.history)
       )
-        setState(s);
+        setState({
+          ...s,
+          currency: isCurrency(s.currency) ? s.currency : "USD",
+        });
     } catch {}
     setReady(true);
   }, []);
@@ -95,7 +115,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     { label: "New Releases", icon: Lightning, href: "/#catalog" },
   ];
   return (
-    <Store.Provider value={{ state, setState, ready }}>
+    <Store.Provider value={{ state, setState, ready, currency, format }}>
       <header className="topbar">
         <div className="brand">
           <button
@@ -110,11 +130,40 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </Link>
         </div>
         <div className="wallet">
-          <span data-testid="balance">
-            ${money(state.balance)} <span className="coin">$</span>
-            <CaretDown size={12} />
+          <span className="wallet-balance">
+            <span data-testid="balance">{format(state.balance)}</span>
+            <label
+              className="currency-picker"
+              title={
+                state.round?.status === "playing"
+                  ? "Finish your round to switch currencies"
+                  : "Switch currency"
+              }
+            >
+              <select
+                aria-label="Currency"
+                value={currency}
+                disabled={!ready || state.round?.status === "playing"}
+                onChange={(event) =>
+                  setState((s) =>
+                    switchCurrency(s, event.target.value as Currency),
+                  )
+                }
+              >
+                {Object.entries(currencies).map(([code, details]) => (
+                  <option key={code} value={code}>
+                    {code}
+                  </option>
+                ))}
+              </select>
+              <CaretDown size={11} aria-hidden="true" />
+            </label>
           </span>
-          <button className="blue-button" onClick={() => setModal("Wallet")}>
+          <button
+            className="blue-button"
+            aria-label="Open wallet"
+            onClick={() => setModal("Wallet")}
+          >
             <Wallet size={18} />
             <span>Wallet</span>
           </button>
@@ -276,10 +325,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
             {modal === "Wallet" ? (
               <>
                 <p>Your balance</p>
-                <h1>${money(state.balance)}</h1>
+                <h1>{format(state.balance)}</h1>
                 <p>
                   These are virtual credits, with no monetary value. Top up and
-                  keep exploring Mines.
+                  keep exploring Mines. Each currency has its own saved balance
+                  and bet history; switching does not convert funds.
                 </p>
                 <button
                   className="green-button"
@@ -289,7 +339,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     setModal("");
                   }}
                 >
-                  Add $1,000 virtual credits
+                  Add {format(100000)} virtual credits
                 </button>
                 {state.round?.status === "playing" && (
                   <small>Finish your current round to add credits.</small>
@@ -323,7 +373,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                       ? "Your completed Mines rounds appear in My Bets on the Mines page."
                       : modal === "Favourites"
                         ? "Mines is ready to play. The other games are display-only samples."
-                        : "Explore the casino and play Mines with virtual credits. This feature is a preview in this preview."}
+                        : "Explore the casino and play Mines with virtual credits. This feature is a preview."}
                 </p>
                 <button className="blue-button" onClick={() => setModal("")}>
                   Got it

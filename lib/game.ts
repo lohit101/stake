@@ -1,3 +1,4 @@
+import type { Currency } from "./currency";
 export type Round = {
   mode?: "lose" | "win";
   loseAt?: number;
@@ -15,10 +16,14 @@ export type Entry = {
   payout: number;
   time: string;
 };
-export type GameState = {
+export type WalletState = {
   balance: number;
   round: Round | null;
   history: Entry[];
+};
+export type GameState = WalletState & {
+  currency?: Currency;
+  wallets?: Partial<Record<Currency, WalletState>>;
 };
 export const initialState: GameState = {
   balance: 100000,

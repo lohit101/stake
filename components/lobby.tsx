@@ -18,6 +18,7 @@ import {
   Trophy,
   Gift,
 } from "@phosphor-icons/react";
+import { useGame } from "./shell";
 const games = [
   { id: "mines", name: "Mines", tag: "PLAY NOW" },
   { id: "plinko", name: "Plinko" },
@@ -37,6 +38,7 @@ export function Gem({ className = "" }: { className?: string }) {
   );
 }
 export function Lobby() {
+  const { format } = useGame();
   const searchRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -129,7 +131,7 @@ export function Lobby() {
             <div>
               <span className="eyebrow">ALL THE FUN. ZERO RISK.</span>
               <h3>
-                Your first $1,000
+                Your first {format(100000)}
                 <br />
                 is on us.
               </h3>
@@ -282,8 +284,8 @@ export function Lobby() {
             <span>03</span>
             <h3>Just play. Enjoy. Repeat.</h3>
             <p>
-              Start with $1,000 in virtual credits. Top up your wallet whenever
-              you need.
+              Start with {format(100000)} in virtual credits. Top up your wallet
+              whenever you need.
             </p>
           </div>
         </div>

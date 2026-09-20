@@ -2011,3 +2011,163 @@ td:first-child svg {
     box-shadow: 0 5px 24px #00170dd0;
   }
 }
+
+.currency-picker {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.currency-picker select {
+  appearance: none;
+  background: #213743;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  border: 0;
+  border-radius: 4px;
+  padding: 8px 20px 8px 8px;
+  cursor: pointer;
+}
+.currency-picker select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.currency-picker svg {
+  position: absolute;
+  right: 6px;
+  pointer-events: none;
+  color: #a7bccb;
+}
+.wallet-balance > [data-testid="balance"] {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.board-area {
+  position: relative;
+}
+.win-result {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  width: 238px;
+  max-width: calc(100% - 48px);
+  background: #0f212ef5;
+  border: 3px solid #00e701;
+  border-radius: 9px;
+  box-shadow:
+    0 12px 60px #0009,
+    0 0 35px #00e70112;
+  padding: 23px 23px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #00e701;
+  animation: win-appear 0.22s ease-out;
+  text-align: center;
+}
+.win-close {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #9db5c4;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+}
+.win-multiplier {
+  font-size: 38px;
+  font-weight: 900;
+  margin-top: 7px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.win-divider {
+  height: 2px;
+  width: 65px;
+  background: #00e701;
+  opacity: 0.45;
+  margin: 15px 0;
+}
+.win-label {
+  color: #a6beca;
+  font-size: 9px;
+  letter-spacing: 1.7px;
+}
+.win-profit {
+  font-size: 28px;
+  margin-top: 5px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.win-payout {
+  font-size: 11px;
+  color: #9db5c4;
+  margin-top: 13px;
+}
+.win-payout b {
+  color: white;
+  margin-left: 6px;
+}
+.win-currency {
+  font-size: 9px;
+  color: #738d9e;
+  letter-spacing: 1px;
+  margin-top: 10px;
+}
+.red-text {
+  color: #ff899f;
+}
+@keyframes win-appear {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+@media (max-width: 600px) {
+  .wallet > .wallet-balance {
+    padding: 0 8px;
+    gap: 6px;
+  }
+  .currency-picker select {
+    font-size: 10px;
+    padding-left: 6px;
+    padding-right: 17px;
+  }
+  .win-result {
+    width: 208px;
+    padding: 19px 20px 15px;
+  }
+  .win-multiplier {
+    font-size: 32px;
+  }
+  .win-profit {
+    font-size: 25px;
+  }
+}
+@media (max-width: 360px) {
+  .topbar {
+    padding: 0 8px;
+  }
+  .brand .logo {
+    font-size: 28px;
+  }
+  .wallet > span {
+    font-size: 11px;
+  }
+  .header-actions .icon-button {
+    padding: 3px;
+  }
+}

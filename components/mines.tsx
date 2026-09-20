@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Diamond,
@@ -12,18 +12,20 @@ import {
   CaretRight,
   ShieldCheck,
   ArrowLeft,
+  X,
 } from "@phosphor-icons/react";
 import { useGame, Logo } from "./shell";
 import {
   finish,
   makeMines,
-  money,
+  type Round,
   multiplier,
   randomInt,
   reveal,
 } from "@/lib/game";
+import { currencies, formatMoney, type Currency } from "@/lib/currency";
 export function Mines() {
-  const { state, setState, ready } = useGame();
+  const { state, setState, ready, currency, format } = useGame();
   const [bet, setBet] = useState("10.00");
   const [size, setSize] = useState(5);
   const [mineCount, setMineCount] = useState(3);
@@ -31,6 +33,39 @@ export function Mines() {
   const [sound, setSound] = useState(false);
   const [help, setHelp] = useState(false);
   const r = state.round;
+  const [result, setResult] = useState<{
+    round: Round;
+    currency: Currency;
+  } | null>(null);
+  const previous = useRef({ status: r?.status, currency });
+  const resultRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (
+      previous.current.currency === currency &&
+      previous.current.status === "playing" &&
+      r?.status === "won"
+    ) {
+      setResult({ round: r, currency });
+    } else if (
+      previous.current.currency !== currency ||
+      r?.status === "playing"
+    )
+      setResult(null);
+    previous.current = { status: r?.status, currency };
+  }, [r, currency]);
+  useEffect(() => {
+    if (!result) return;
+    if (window.matchMedia("(max-width: 600px)").matches)
+      resultRef.current?.scrollIntoView({
+        block: "center",
+        behavior: "instant",
+      });
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setResult(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [result]);
   const active = r?.status === "playing";
   const boardSize = r?.size || size;
   const count = r?.mines.length || mineCount;
@@ -57,7 +92,7 @@ export function Mines() {
   function start(mode: "lose" | "win") {
     const amount = Math.round(Number(bet) * 100);
     if (!Number.isFinite(amount) || amount < 1) {
-      setError("Enter a bet of at least $0.01.");
+      setError(`Enter a bet of at least ${format(1)}.`);
       return;
     }
     if (amount > state.balance) {
@@ -133,7 +168,7 @@ export function Mines() {
             Manual <span>You’re in control</span>
           </div>
           <label htmlFor="bet">
-            Bet Amount <span>USD</span>
+            Bet Amount <span>{currency}</span>
           </label>
           <div className="bet-input">
             <div>
@@ -146,7 +181,7 @@ export function Mines() {
                 disabled={active}
                 onChange={(e) => setBet(e.target.value)}
               />
-              <span className="coin">$</span>
+              <span className="coin">{currencies[currency].symbol}</span>
             </div>
             <button
               disabled={active}
@@ -248,7 +283,7 @@ export function Mines() {
               start(leftHalf ? "lose" : "win");
             }}
           >
-            {active ? `Cash Out · $${money(Math.floor(r.bet * mult))}` : "Bet"}
+            {active ? `Cash Out · ${format(Math.floor(r.bet * mult))}` : "Bet"}
             {!active && <Diamond size={19} weight="fill" />}
           </button>
           {error && (
@@ -266,12 +301,17 @@ export function Mines() {
             <label>
               Total Profit <span>({mult.toFixed(2)}×)</span>
             </label>
-            <strong className={picks ? "green-text" : ""}>
-              $
-              {money(
+            <strong
+              className={
+                r?.status === "lost" ? "red-text" : picks ? "green-text" : ""
+              }
+            >
+              {format(
                 r?.status === "lost"
-                  ? 0
-                  : Math.floor((r?.bet || 0) * (mult - 1)),
+                  ? -r.bet
+                  : r?.status === "won"
+                    ? r.payout - r.bet
+                    : Math.floor((r?.bet || 0) * mult) - (r?.bet || 0),
               )}
             </strong>
             <Diamond size={21} weight="fill" />
@@ -324,6 +364,45 @@ export function Mines() {
               );
             })}
           </div>
+          {result && (
+            <div
+              className="win-result"
+              ref={resultRef}
+              role="dialog"
+              aria-label="Bet result"
+              aria-modal="false"
+            >
+              <button
+                className="win-close"
+                aria-label="Dismiss bet result"
+                onClick={() => setResult(null)}
+              >
+                <X size={17} />
+              </button>
+              <SketchLogo size={30} weight="fill" aria-hidden="true" />
+              <strong className="win-multiplier">
+                {multiplier(
+                  result.round.size ** 2,
+                  result.round.mines.length,
+                  result.round.revealed.length,
+                ).toFixed(2)}
+                ×
+              </strong>
+              <div className="win-divider" />
+              <span className="win-label">TOTAL PROFIT</span>
+              <strong className="win-profit" data-testid="result-profit">
+                {formatMoney(
+                  result.round.payout - result.round.bet,
+                  result.currency,
+                )}
+              </strong>
+              <span className="win-payout">
+                Payout{" "}
+                <b>{formatMoney(result.round.payout, result.currency)}</b>
+              </span>
+              <span className="win-currency">{result.currency}</span>
+            </div>
+          )}
           <div
             className={`board-status ${r?.status === "won" ? "won" : r?.status === "lost" ? "lost" : ""}`}
             role="status"
@@ -342,7 +421,7 @@ export function Mines() {
             ) : r.status === "won" ? (
               <>
                 <Diamond size={18} weight="fill" />
-                Cashed out ${money(r.payout)} at {mult.toFixed(2)}×
+                Cashed out {format(r.payout)} at {mult.toFixed(2)}×
               </>
             ) : (
               <>
@@ -426,10 +505,10 @@ export function Mines() {
                       minute: "2-digit",
                     })}
                   </td>
-                  <td>${money(e.bet)}</td>
+                  <td>{format(e.bet)}</td>
                   <td>{e.multiplier.toFixed(2)}×</td>
                   <td className={e.payout ? "green-text" : ""}>
-                    ${money(e.payout)}
+                    {format(e.payout)}
                   </td>
                 </tr>
               ))}
